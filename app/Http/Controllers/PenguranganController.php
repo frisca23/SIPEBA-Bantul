@@ -9,15 +9,11 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class PenguranganController extends Controller
 {
     use AuthorizesRequests;
-
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
 
     /**
      * Display a listing of the resource.
@@ -39,8 +35,8 @@ class PenguranganController extends Controller
     {
         $this->authorize('create', Pengurangan::class);
 
-        $unitKerja = auth()->user()->unitKerja;
-        $barang = Barang::where('unit_kerja_id', auth()->user()->unit_kerja_id)
+        $unitKerja = Auth::user()->unitKerja;
+        $barang = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)
             ->get();
 
         return view('pengurangan.create', compact('unitKerja', 'barang'));
@@ -65,7 +61,7 @@ class PenguranganController extends Controller
         // Validasi bahwa semua barang milik unit kerja yang sama
         $barangIds = array_column($validated['detail'], 'barang_id');
         $invalidBarang = Barang::whereIn('id', $barangIds)
-            ->where('unit_kerja_id', '!=', auth()->user()->unit_kerja_id)
+            ->where('unit_kerja_id', '!=', Auth::user()->unit_kerja_id)
             ->exists();
 
         if ($invalidBarang) {
@@ -76,12 +72,12 @@ class PenguranganController extends Controller
 
         // Create pengurangan
         $pengurangan = Pengurangan::create([
-            'unit_kerja_id' => auth()->user()->unit_kerja_id,
+            'unit_kerja_id' => Auth::user()->unit_kerja_id,
             'no_bukti' => $validated['no_bukti'],
             'tgl_keluar' => $validated['tgl_keluar'],
             'keperluan' => $validated['keperluan'],
             'status' => 'pending', // Default status
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Create pengurangan details
@@ -116,7 +112,7 @@ class PenguranganController extends Controller
     {
         $this->authorize('update', $pengurangan);
 
-        $barang = Barang::where('unit_kerja_id', auth()->user()->unit_kerja_id)->get();
+        $barang = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)->get();
         $pengurangan->load('detail');
 
         return view('pengurangan.edit', compact('pengurangan', 'barang'));
@@ -181,7 +177,7 @@ class PenguranganController extends Controller
         // Update status
         $pengurangan->update([
             'status' => 'approved',
-            'verified_by' => auth()->id(),
+            'verified_by' => Auth::id(),
             'verified_at' => now(),
         ]);
 

@@ -11,18 +11,15 @@ class RekapSetdaController extends Controller
 {
     use AuthorizesRequests;
 
-    public function __construct()
-    {
-        $this->middleware('auth');
-        $this->middleware('can:is-super-admin'); // Hanya super admin
-    }
-
     /**
      * Display the SETDA recap dashboard
      * Shows aggregated asset values from all 8 units
      */
     public function index(): View
     {
+        // Only super admin can access
+        $this->authorize('is-super-admin');
+        
         // Get all units dengan aggregated asset values
         $units = UnitKerja::with('barang')
             ->get()

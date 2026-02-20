@@ -9,15 +9,11 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class BarangController extends Controller
 {
     use AuthorizesRequests;
-
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
 
     /**
      * Display a listing of the resource.
@@ -40,7 +36,7 @@ class BarangController extends Controller
     {
         $this->authorize('create', Barang::class);
 
-        $unitKerja = auth()->user()->unitKerja;
+        $unitKerja = Auth::user()->unitKerja;
         $jenisBarang = JenisBarang::all();
 
         return view('barang.create', compact('unitKerja', 'jenisBarang'));
@@ -61,7 +57,7 @@ class BarangController extends Controller
         ]);
 
         // Cek unique constraint (unit_kerja_id + kode_barang)
-        $exists = Barang::where('unit_kerja_id', auth()->user()->unit_kerja_id)
+        $exists = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)
             ->where('kode_barang', $validated['kode_barang'])
             ->exists();
 
@@ -72,7 +68,7 @@ class BarangController extends Controller
         }
 
         Barang::create([
-            'unit_kerja_id' => auth()->user()->unit_kerja_id,
+            'unit_kerja_id' => Auth::user()->unit_kerja_id,
             'jenis_id' => $validated['jenis_id'],
             'kode_barang' => $validated['kode_barang'],
             'nama_barang' => $validated['nama_barang'],
