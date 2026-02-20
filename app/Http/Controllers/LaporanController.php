@@ -17,11 +17,6 @@ class LaporanController extends Controller
 {
     use AuthorizesRequests;
 
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Show laporan form with date filters
      */

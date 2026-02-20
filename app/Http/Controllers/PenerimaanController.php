@@ -9,15 +9,11 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class PenerimaanController extends Controller
 {
     use AuthorizesRequests;
-
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
 
     /**
      * Display a listing of the resource.
@@ -39,8 +35,8 @@ class PenerimaanController extends Controller
     {
         $this->authorize('create', Penerimaan::class);
 
-        $unitKerja = auth()->user()->unitKerja;
-        $barang = Barang::where('unit_kerja_id', auth()->user()->unit_kerja_id)
+        $unitKerja = Auth::user()->unitKerja;
+        $barang = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)
             ->get();
 
         return view('penerimaan.create', compact('unitKerja', 'barang'));
@@ -68,7 +64,7 @@ class PenerimaanController extends Controller
         // Validasi bahwa semua barang milik unit kerja yang sama
         $barangIds = array_column($validated['detail'], 'barang_id');
         $invalidBarang = Barang::whereIn('id', $barangIds)
-            ->where('unit_kerja_id', '!=', auth()->user()->unit_kerja_id)
+            ->where('unit_kerja_id', '!=', Auth::user()->unit_kerja_id)
             ->exists();
 
         if ($invalidBarang) {
@@ -79,14 +75,14 @@ class PenerimaanController extends Controller
 
         // Create penerimaan
         $penerimaan = Penerimaan::create([
-            'unit_kerja_id' => auth()->user()->unit_kerja_id,
+            'unit_kerja_id' => Auth::user()->unit_kerja_id,
             'no_dokumen' => $validated['no_dokumen'],
             'tgl_dokumen' => $validated['tgl_dokumen'],
             'sumber_dana' => $validated['sumber_dana'],
             'tahun_anggaran' => $validated['tahun_anggaran'],
             'keterangan' => $validated['keterangan'] ?? null,
             'status' => 'pending', // Default status
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Create penerimaan details
@@ -122,7 +118,7 @@ class PenerimaanController extends Controller
     {
         $this->authorize('update', $penerimaan);
 
-        $barang = Barang::where('unit_kerja_id', auth()->user()->unit_kerja_id)->get();
+        $barang = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)->get();
         $penerimaan->load('detail');
 
         return view('penerimaan.edit', compact('penerimaan', 'barang'));
@@ -182,7 +178,7 @@ class PenerimaanController extends Controller
         // Update status
         $penerimaan->update([
             'status' => 'approved',
-            'verified_by' => auth()->id(),
+            'verified_by' => Auth::id(),
             'verified_at' => now(),
         ]);
 
