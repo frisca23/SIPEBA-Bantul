@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenerimaanController;
 use App\Http\Controllers\PenguranganController;
 use App\Http\Controllers\RekapSetdaController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,10 +25,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     // Dashboard
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Master Data
     Route::resource('barang', BarangController::class);
 
@@ -52,4 +51,7 @@ Route::middleware('auth')->group(function () {
     // Rekap SETDA (Super Admin only)
     Route::get('/rekap-setda', [RekapSetdaController::class, 'index'])
         ->name('rekap-setda.index');
+
+    // User Management (Super Admin only)
+    Route::resource('users', UserController::class)->except(['show']);
 });
