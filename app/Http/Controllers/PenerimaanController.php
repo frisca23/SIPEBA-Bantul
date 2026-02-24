@@ -20,10 +20,14 @@ class PenerimaanController extends Controller
      */
     public function index(): View
     {
-        // Read-All: Semua user bisa lihat penerimaan dari semua unit
-        $penerimaan = Penerimaan::with(['unitKerja', 'creator', 'verifier', 'detail'])
-            ->orderByDesc('tgl_dokumen')
-            ->paginate(15);
+        $query = Penerimaan::with(['unitKerja', 'creator', 'verifier', 'detail'])
+            ->orderByDesc('tgl_dokumen');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+        }
+
+        $penerimaan = $query->paginate(15);
 
         return view('penerimaan.index', compact('penerimaan'));
     }
@@ -50,7 +54,7 @@ class PenerimaanController extends Controller
         $this->authorize('create', Penerimaan::class);
 
         $validated = $request->validate([
-            'no_dokumen' => 'required|string|unique:penerimaan,no_dokumen',
+            'no_dokumen' => 'nullable|string',
             'tgl_dokumen' => 'required|date',
             'sumber_dana' => 'required|string',
             'tahun_anggaran' => 'required|integer|digits:4',
@@ -61,8 +65,17 @@ class PenerimaanController extends Controller
             'detail.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
-        // Validasi bahwa semua barang milik unit kerja yang sama
+        // Validasi duplikat barang_id dalam satu penerimaan
         $barangIds = array_column($validated['detail'], 'barang_id');
+        $duplicateBarang = array_diff_assoc($barangIds, array_unique($barangIds));
+        
+        if (!empty($duplicateBarang)) {
+            return back()->withInput()->withErrors([
+                'detail' => 'Ada barang yang ditambahkan lebih dari satu kali. Setiap barang hanya boleh ditambahkan sekali per penerimaan.'
+            ]);
+        }
+
+        // Validasi bahwa semua barang milik unit kerja yang sama
         $invalidBarang = Barang::whereIn('id', $barangIds)
             ->where('unit_kerja_id', '!=', Auth::user()->unit_kerja_id)
             ->exists();
@@ -141,6 +154,16 @@ class PenerimaanController extends Controller
             'detail.*.jumlah_masuk' => 'required|integer|min:1',
             'detail.*.harga_satuan' => 'required|numeric|min:0',
         ]);
+
+        // Validasi duplikat barang_id dalam satu penerimaan
+        $barangIds = array_column($validated['detail'], 'barang_id');
+        $duplicateBarang = array_diff_assoc($barangIds, array_unique($barangIds));
+        
+        if (!empty($duplicateBarang)) {
+            return back()->withInput()->withErrors([
+                'detail' => 'Ada barang yang ditambahkan lebih dari satu kali. Setiap barang hanya boleh ditambahkan sekali per penerimaan.'
+            ]);
+        }
 
         $penerimaan->update([
             'tgl_dokumen' => $validated['tgl_dokumen'],

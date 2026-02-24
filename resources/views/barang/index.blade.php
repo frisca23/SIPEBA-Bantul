@@ -8,74 +8,81 @@
     <p class="breadcrumbs">Home > Barang</p>
 </div>
 
+@if(session('success'))
+<div class="alert alert-success" style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <i class="fas fa-check-circle"></i> {{ session('success') }}
+</div>
+@endif
+
+@if($errors->any())
+<div class="alert alert-danger" style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <i class="fas fa-exclamation-triangle"></i>
+    @foreach($errors->all() as $error)
+        {{ $error }}
+    @endforeach
+</div>
+@endif
+
 @can('create', App\Models\Barang::class)
 <div style="margin-bottom: 15px;">
     <a href="{{ route('barang.create') }}" class="btn btn-success">+ Tambah Barang Baru</a>
 </div>
 @endcan
 
-<table>
-    <thead>
-        <tr>
-            <th>No</th>
-            <th>Unit Kerja</th>
-            <th>Kode Barang</th>
-            <th>Nama Barang</th>
-            <th>Satuan</th>
-            <th>Stok Saat Ini</th>
-            <th>Harga Terakhir</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($barang as $item)
-        <tr>
-            <td>{{ ($barang->currentPage() - 1) * $barang->perPage() + $loop->iteration }}</td>
-            <td><small>{{ $item->unitKerja->nama_unit }}</small></td>
-            <td><strong>{{ $item->kode_barang }}</strong></td>
-            <td>{{ $item->nama_barang }}</td>
-            <td>{{ $item->satuan }}</td>
-            <td style="text-align: center; font-weight: bold;">
-                {{ $item->stok_saat_ini }}
-            </td>
-            <td style="text-align: right;">
-                Rp {{ number_format($item->harga_terakhir, 2, ',', '.') }}
-            </td>
-            <td>
-                <a href="{{ route('barang.show', $item) }}" class="btn btn-primary btn-sm">Lihat</a>
-                
-                @can('update', $item)
-                <a href="{{ route('barang.edit', $item) }}" class="btn btn-warning btn-sm">Edit</a>
-                @endcan
-
-                @can('delete', $item)
-                <form action="{{ route('barang.destroy', $item) }}" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm" 
-                            onclick="return confirm('Hapus barang ini?')">
-                        Hapus
-                    </button>
-                </form>
-                @endcan
-            </td>
-        </tr>
-        @empty
-        <tr>
-            <td colspan="8" style="text-align: center; padding: 30px;">
-                <em>Tidak ada data barang</em>
-            </td>
-        </tr>
-        @endforelse
-    </tbody>
-</table>
-
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-    <div>
-        <small style="color: #666;">
-            Menampilkan {{ $barang->count() }} dari {{ $barang->total() }} data
-        </small>
-    </div>
-    {{ $barang->links() }}
+@if(auth()->user()->role === 'super_admin')
+<div style="display: flex; gap: 12px; align-items: center; margin-bottom: 18px;">
+    <label for="unit-kerja-filter" style="font-weight: 600; color: #1a2b4b;">Filter Unit Kerja:</label>
+    <select id="unit-kerja-filter" style="max-width: 320px;">
+        <option value="all" @selected(($selectedUnit ?? 'all') === 'all')>Semua Unit</option>
+        @foreach($unitKerja as $unit)
+            <option value="{{ $unit->id }}" @selected(($selectedUnit ?? 'all') == $unit->id)>
+                {{ $unit->nama_unit }}
+            </option>
+        @endforeach
+    </select>
 </div>
+@endif
+
+<div id="barang-table">
+    @include('barang.partials.table', ['barang' => $barang])
+</div>
+
+@if(auth()->user()->role === 'super_admin')
+<script>
+    const unitFilter = document.getElementById('unit-kerja-filter');
+    const tableContainer = document.getElementById('barang-table');
+
+    const fetchTable = (url) => {
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.text())
+            .then(html => {
+                tableContainer.innerHTML = html;
+            })
+            .catch(() => {
+                tableContainer.innerHTML = '<p style="color:#991b1b;">Gagal memuat data. Silakan refresh halaman.</p>';
+            });
+    };
+
+    unitFilter.addEventListener('change', () => {
+        const params = new URLSearchParams(window.location.search);
+        params.set('unit_kerja_id', unitFilter.value);
+        params.delete('page');
+        const url = `${window.location.pathname}?${params.toString()}`;
+        fetchTable(url);
+    });
+
+    tableContainer.addEventListener('click', (event) => {
+        const link = event.target.closest('a');
+        if (!link || !link.closest('.pagination')) {
+            return;
+        }
+        event.preventDefault();
+        const url = new URL(link.href);
+        if (unitFilter && !url.searchParams.has('unit_kerja_id')) {
+            url.searchParams.set('unit_kerja_id', unitFilter.value);
+        }
+        fetchTable(url.toString());
+    });
+</script>
+@endif
 @endsection

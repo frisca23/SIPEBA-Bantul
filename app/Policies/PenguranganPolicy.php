@@ -36,8 +36,9 @@ class PenguranganPolicy
      */
     public function update(User $user, Pengurangan $pengurangan): bool
     {
-        // Write-Own: Hanya bisa update pengurangan milik unit sendiri
-        return $user->unit_kerja_id === $pengurangan->unit_kerja_id && $pengurangan->status === 'pending';
+        // Pengurus dan Kepala Bagian bisa edit kapan saja
+        return $user->unit_kerja_id === $pengurangan->unit_kerja_id 
+            && in_array($user->role, ['pengurus_barang', 'kepala_bagian']);
     }
 
     /**
@@ -45,18 +46,20 @@ class PenguranganPolicy
      */
     public function delete(User $user, Pengurangan $pengurangan): bool
     {
-        // Write-Own: Hanya bisa delete pengurangan milik unit sendiri (jika masih pending)
-        return $user->unit_kerja_id === $pengurangan->unit_kerja_id && $pengurangan->status === 'pending';
+        // Pengurus dan Kepala Bagian bisa hapus kapan saja
+        return $user->unit_kerja_id === $pengurangan->unit_kerja_id 
+            && in_array($user->role, ['pengurus_barang', 'kepala_bagian']);
     }
 
     /**
      * Determine whether the user can approve the model.
-     * Only kepala_bagian can approve transactions from their own unit.
+     * Only kepala_bagian can approve transactions from their own unit (and status is pending)
      */
     public function approve(User $user, Pengurangan $pengurangan): bool
     {
         return $user->unit_kerja_id === $pengurangan->unit_kerja_id 
-            && $user->role === 'kepala_bagian';
+            && $user->role === 'kepala_bagian'
+            && $pengurangan->status === 'pending';
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Models\PenerimaanDetail;
 use App\Models\Pengurangan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -19,6 +20,8 @@ class DashboardController extends Controller
     public function index(): View
     {
         $now = Carbon::now();
+        $isAdmin = Auth::user()->role === 'super_admin';
+        $unitKerjaId = Auth::user()->unit_kerja_id;
 
         // -------------------------------------------------------
         // 1. STAT CARDS
@@ -28,42 +31,59 @@ class DashboardController extends Controller
          * Total Barang Tersedia
          * Jumlah seluruh record barang (bisa difilter per unit jika bukan super admin).
          */
-        $totalBarang = Barang::count();
+        $barangQuery = Barang::query();
+        if (!$isAdmin) {
+            $barangQuery->where('unit_kerja_id', $unitKerjaId);
+        }
+        $totalBarang = $barangQuery->count();
 
         /**
          * Total Penerimaan (Bulan Ini)
          * Jumlah dokumen penerimaan yang dibuat pada bulan & tahun berjalan.
          */
-        $totalPenerimaanBulanIni = Penerimaan::whereYear('tgl_dokumen', $now->year)
-            ->whereMonth('tgl_dokumen', $now->month)
-            ->count();
+        $penerimaanQuery = Penerimaan::whereYear('tgl_dokumen', $now->year)
+            ->whereMonth('tgl_dokumen', $now->month);
+        if (!$isAdmin) {
+            $penerimaanQuery->where('unit_kerja_id', $unitKerjaId);
+        }
+        $totalPenerimaanBulanIni = $penerimaanQuery->count();
 
         /**
          * Total Pengurangan (Bulan Ini)
          * Jumlah dokumen pengurangan yang dibuat pada bulan & tahun berjalan.
          */
-        $totalPenguranganBulanIni = Pengurangan::whereYear('tgl_keluar', $now->year)
-            ->whereMonth('tgl_keluar', $now->month)
-            ->count();
+        $penguranganQuery = Pengurangan::whereYear('tgl_keluar', $now->year)
+            ->whereMonth('tgl_keluar', $now->month);
+        if (!$isAdmin) {
+            $penguranganQuery->where('unit_kerja_id', $unitKerjaId);
+        }
+        $totalPenguranganBulanIni = $penguranganQuery->count();
 
         /**
          * Estimasi Total Aset (Rupiah)
          * Dihitung dari SUM(stok_saat_ini * harga_terakhir) pada tabel barang.
          */
-        $estimasiAset = Barang::selectRaw('SUM(stok_saat_ini * harga_terakhir) as total')
-            ->value('total') ?? 0;
+        $asetQuery = Barang::selectRaw('SUM(stok_saat_ini * harga_terakhir) as total');
+        if (!$isAdmin) {
+            $asetQuery->where('unit_kerja_id', $unitKerjaId);
+        }
+        $estimasiAset = $asetQuery->value('total') ?? 0;
 
         // -------------------------------------------------------
         // 2. RECENT TRANSACTIONS (5 terbaru)
         // -------------------------------------------------------
 
-        $latestPenerimaan = Penerimaan::orderByDesc('tgl_dokumen')
-            ->limit(5)
-            ->get();
+        $latestPenerimaanQuery = Penerimaan::orderByDesc('tgl_dokumen')->limit(5);
+        if (!$isAdmin) {
+            $latestPenerimaanQuery->where('unit_kerja_id', $unitKerjaId);
+        }
+        $latestPenerimaan = $latestPenerimaanQuery->get();
 
-        $latestPengurangan = Pengurangan::orderByDesc('tgl_keluar')
-            ->limit(5)
-            ->get();
+        $latestPenguranganQuery = Pengurangan::orderByDesc('tgl_keluar')->limit(5);
+        if (!$isAdmin) {
+            $latestPenguranganQuery->where('unit_kerja_id', $unitKerjaId);
+        }
+        $latestPengurangan = $latestPenguranganQuery->get();
 
         // -------------------------------------------------------
         // 3. CHART DATA
@@ -73,13 +93,13 @@ class DashboardController extends Controller
          * Chart Mutasi Barang 6 Bulan Terakhir
          * Menghitung jumlah dokumen penerimaan & pengurangan per bulan.
          */
-        $chartMutasi = $this->getMutasi6Bulan($now);
+        $chartMutasi = $this->getMutasi6Bulan($now, $isAdmin, $unitKerjaId);
 
         /**
          * Chart Komposisi Stok per Jenis Barang
          * Menghitung total stok_saat_ini dikelompokkan per jenis barang.
          */
-        $chartJenis = $this->getStokPerJenis();
+        $chartJenis = $this->getStokPerJenis($isAdmin, $unitKerjaId);
 
         return view('dashboard', compact(
             'totalBarang',
@@ -97,7 +117,7 @@ class DashboardController extends Controller
      * Hitung jumlah penerimaan & pengurangan per bulan
      * untuk 6 bulan ke belakang dari tanggal sekarang.
      */
-    private function getMutasi6Bulan(Carbon $now): array
+    private function getMutasi6Bulan(Carbon $now, bool $isAdmin, ?int $unitKerjaId): array
     {
         $labels      = [];
         $penerimaan  = [];
@@ -108,13 +128,19 @@ class DashboardController extends Controller
 
             $labels[] = $bulan->locale('id')->isoFormat('MMM YY');
 
-            $penerimaan[] = Penerimaan::whereYear('tgl_dokumen', $bulan->year)
-                ->whereMonth('tgl_dokumen', $bulan->month)
-                ->count();
+            $penerimaanQuery = Penerimaan::whereYear('tgl_dokumen', $bulan->year)
+                ->whereMonth('tgl_dokumen', $bulan->month);
+            if (!$isAdmin) {
+                $penerimaanQuery->where('unit_kerja_id', $unitKerjaId);
+            }
+            $penerimaan[] = $penerimaanQuery->count();
 
-            $pengurangan[] = Pengurangan::whereYear('tgl_keluar', $bulan->year)
-                ->whereMonth('tgl_keluar', $bulan->month)
-                ->count();
+            $penguranganQuery = Pengurangan::whereYear('tgl_keluar', $bulan->year)
+                ->whereMonth('tgl_keluar', $bulan->month);
+            if (!$isAdmin) {
+                $penguranganQuery->where('unit_kerja_id', $unitKerjaId);
+            }
+            $pengurangan[] = $penguranganQuery->count();
         }
 
         return compact('labels', 'penerimaan', 'pengurangan');
@@ -123,10 +149,13 @@ class DashboardController extends Controller
     /**
      * Hitung total stok saat ini per jenis barang.
      */
-    private function getStokPerJenis(): array
+    private function getStokPerJenis(bool $isAdmin, ?int $unitKerjaId): array
     {
-        $rows = JenisBarang::with(['barang' => function ($q) {
+        $rows = JenisBarang::with(['barang' => function ($q) use ($isAdmin, $unitKerjaId) {
                 $q->select('jenis_id', 'stok_saat_ini');
+                if (!$isAdmin) {
+                    $q->where('unit_kerja_id', $unitKerjaId);
+                }
             }])
             ->get()
             ->map(function ($jenis) {

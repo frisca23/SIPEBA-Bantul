@@ -8,6 +8,21 @@
     <p class="breadcrumbs">Home > Barang > {{ $barang->kode_barang }}</p>
 </div>
 
+@if(session('success'))
+<div class="alert alert-success" style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <i class="fas fa-check-circle"></i> {{ session('success') }}
+</div>
+@endif
+
+@if($errors->any())
+<div class="alert alert-danger" style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <i class="fas fa-exclamation-triangle"></i>
+    @foreach($errors->all() as $error)
+        {{ $error }}
+    @endforeach
+</div>
+@endif
+
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
     <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
         <h4 style="color: #003399; margin-bottom: 15px;">Informasi Barang</h4>
@@ -40,7 +55,9 @@
     <form action="{{ route('barang.destroy', $barang) }}" method="POST" style="display: inline;">
         @csrf
         @method('DELETE')
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Hapus barang ini?')">Hapus</button>
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Yakin ingin menghapus barang {{ $barang->nama_barang }}?\n\nCATATAN: Barang yang sudah digunakan dalam transaksi tidak dapat dihapus.')">
+            Hapus
+        </button>
     </form>
     @endcan
 </div>

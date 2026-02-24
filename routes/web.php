@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\JenisBarangController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenerimaanController;
 use App\Http\Controllers\PenguranganController;
@@ -28,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Master Data
     Route::resource('barang', BarangController::class);
+    Route::resource('jenis-barang', JenisBarangController::class);
 
     // Transactions
     Route::resource('penerimaan', PenerimaanController::class);

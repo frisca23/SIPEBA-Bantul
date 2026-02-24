@@ -4,284 +4,400 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIPEBA - Sistem Informasi Persediaan Barang</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            font-family: 'Inter', 'Poppins', sans-serif;
+        :root {
+            --bg-start: #003399;
+            --bg-mid: #1a3f8a;
+            --bg-end: #4f7ef8;
+            --card: #ffffff;
+            --ink: #1a2b4b;
+            --muted: #6b7280;
+            --accent: #4f7ef8;
+            --accent-dark: #003399;
+            --border: #e5e9f2;
+            --shadow: 0 30px 70px rgba(0, 34, 102, 0.2);
         }
-        
-        h1, h2, h3, .font-display {
-            font-family: 'Poppins', 'Inter', sans-serif;
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-attachment: fixed;
+            margin: 0;
             min-height: 100vh;
+            background: radial-gradient(1200px 600px at 10% 10%, rgba(79, 126, 248, 0.18), transparent 60%),
+                        radial-gradient(900px 500px at 90% 80%, rgba(0, 51, 153, 0.2), transparent 55%),
+                        linear-gradient(135deg, var(--bg-start), var(--bg-mid) 45%, var(--bg-end));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            color: var(--ink);
         }
 
-        .bg-warehouse {
-            background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
-                              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"><stop offset="0%25" style="stop-color:%235b7cb8;stop-opacity:1" /><stop offset="100%25" style="stop-color:%233a5a8f;stop-opacity:1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23grad)"/><g opacity="0.1"><rect x="100" y="100" width="200" height="300" fill="white"/><rect x="400" y="150" width="180" height="350" fill="white"/><rect x="700" y="120" width="220" height="320" fill="white"/><path d="M 50 500 L 1150 500 L 1150 600 Q 600 650 50 600 Z" fill="white"/></g></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-
-        .glass-effect:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.25);
-        }
-
-        .input-glass {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: white !important;
-        }
-
-        .input-glass::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .input-glass:focus {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.3);
-            outline: none;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-solid {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 100%);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .auth-shell {
+            width: min(1000px, 100%);
             position: relative;
+        }
+
+        .auth-card {
+            background: var(--card);
+            border-radius: 24px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            animation: rise 0.7s ease;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-left {
+            padding: 36px 34px;
+            background: linear-gradient(145deg, #f4f7fb, #ffffff);
+            position: relative;
+        }
+
+        .auth-left::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            border-radius: 18px;
+            border: 1px dashed #dbe5f1;
+            pointer-events: none;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4f7ef8, #003399);
+            display: grid;
+            place-items: center;
+            box-shadow: 0 12px 22px rgba(79, 126, 248, 0.3);
+        }
+
+        .brand-title {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-title strong {
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+
+        .brand-title span {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+        }
+
+        .hero-illust {
+            margin-top: 22px;
+            background: #f5f8fc;
+            border-radius: 18px;
+            padding: 18px;
+            position: relative;
+            z-index: 1;
             overflow: hidden;
         }
 
-        .btn-solid:hover {
-            background: linear-gradient(135deg, #163050 0%, #254a75 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(30, 58, 95, 0.5);
-        }
-
-        .btn-solid:active {
-            transform: translateY(0);
-        }
-
-        .btn-solid::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
+        .hero-illust svg {
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
+            height: auto;
+            display: block;
         }
 
-        .btn-solid:hover::before {
-            left: 100%;
+        .auth-right {
+            padding: 40px 38px;
+            background: #ffffff;
         }
 
-        .text-shadow {
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        .auth-top {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 26px;
         }
 
-        .fade-in {
-            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        .form-title {
+            font-size: 24px;
+            margin: 0 0 6px;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+        .form-subtitle {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .alert {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #9f1239;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font-size: 12px;
+        }
+
+        .alert ul {
+            margin: 6px 0 0 0;
+            padding-left: 16px;
+        }
+
+        .form-group {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        label {
+            font-size: 12px;
+            color: #3b4a5f;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border);
+            font-size: 14px;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(29, 154, 160, 0.12);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #b42318;
+            margin: 0;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 10px 0 18px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #2d3d52;
+            font-weight: 600;
+        }
+
+        .remember input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+
+        .btn-primary {
+            width: 100%;
+            border: none;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 12px 24px rgba(0, 51, 153, 0.28);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 30px rgba(0, 51, 153, 0.32);
+        }
+
+        .login-meta {
+            margin-top: 22px;
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .login-meta span {
+            font-weight: 700;
+            color: #1f3c58;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 900px) {
+            .auth-card {
+                grid-template-columns: 1fr;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            .auth-left {
+                order: 2;
+            }
+
+            .auth-right {
+                order: 1;
+            }
+
+            .auth-top {
+                justify-content: flex-start;
             }
         }
 
-        .shake {
-            animation: shake 0.3s ease-out;
-        }
+        @media (max-width: 520px) {
+            .auth-left,
+            .auth-right {
+                padding: 28px 22px;
+            }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
-        }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus {
-            -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.08) inset !important;
-            -webkit-text-fill-color: white !important;
+            .hero-copy h1 {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
-<body class="bg-warehouse flex items-center justify-center min-h-screen px-4">
-    <div class="w-full max-w-sm">
-        <!-- Main Glass Card -->
-        <div class="glass-effect rounded-2xl p-6 md:p-7 shadow-2xl fade-in">
-            
-            <!-- Logo Section -->
-            <div class="mb-5 text-center">
-                <div class="inline-flex items-center justify-center w-12 h-12 mb-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-lg">
-                    <i class="fas fa-cube text-white text-lg"></i>
-                </div>
-                <h3 class="text-xs font-bold text-white tracking-widest text-shadow uppercase mb-0.5">
-                    Sistem Informasi
-                </h3>
-                <h2 class="text-lg md:text-xl font-bold text-white text-shadow mb-0.5">
-                    PERSEDIAAN BARANG
-                </h2>
-                <p class="text-xs md:text-sm text-blue-100 text-shadow">
-                    Sekretariat Daerah Kabupaten Bantul
-                </p>
-            </div>
-
-            <!-- Error Alert -->
-            @if ($errors->any())
-                <div class="shake mb-4 bg-red-500/20 border border-red-400/40 rounded-lg p-3 backdrop-blur-sm">
-                    <div class="flex items-start">
-                        <i class="fas fa-exclamation-circle text-red-200 mt-0.5 mr-2 text-sm"></i>
-                        <div>
-                            <h4 class="font-semibold text-red-100 text-xs mb-1">Login Gagal</h4>
-                            <ul class="text-red-100 text-xs space-y-0.5">
-                                @foreach ($errors->all() as $error)
-                                    <li class="flex items-center">
-                                        <span class="mr-1">•</span>{{ $error }}
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card">
+            <section class="auth-left">
+                <div class="brand">
+                    <div class="brand-mark" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2.5L3.5 7v10l8.5 4.5L20.5 17V7L12 2.5Z" stroke="#ffffff" stroke-width="1.5" />
+                            <path d="M3.8 7.2L12 11.5l8.2-4.3" stroke="#ffffff" stroke-width="1.5" />
+                            <path d="M12 11.5V22" stroke="#ffffff" stroke-width="1.5" />
+                        </svg>
+                    </div>
+                    <div class="brand-title">
+                        <strong>SIPEBA</strong>
+                        <span>Persediaan Barang</span>
                     </div>
                 </div>
-            @endif
 
-            <!-- Login Form -->
-            <form method="POST" action="{{ route('login') }}" class="space-y-3">
-                @csrf
+                <div class="hero-illust" aria-hidden="true">
+                    <svg viewBox="0 0 520 300" fill="none">
+                        <rect x="24" y="66" width="190" height="150" rx="16" fill="#e6f0f6" />
+                        <rect x="56" y="92" width="120" height="24" rx="10" fill="#cde1ec" />
+                        <rect x="56" y="130" width="120" height="24" rx="10" fill="#cde1ec" />
+                        <rect x="56" y="168" width="120" height="24" rx="10" fill="#cde1ec" />
+                        <rect x="250" y="40" width="220" height="200" rx="18" fill="#f1f6fb" />
+                        <rect x="274" y="70" width="172" height="40" rx="12" fill="#d9e9f3" />
+                        <rect x="274" y="126" width="172" height="40" rx="12" fill="#d9e9f3" />
+                        <rect x="274" y="182" width="120" height="40" rx="12" fill="#4f7ef8" opacity="0.15" />
+                        <path d="M70 238h390" stroke="#d7e3ee" stroke-width="8" stroke-linecap="round" />
+                        <circle cx="150" cy="238" r="18" fill="#4f7ef8" />
+                        <path d="M144 238l4 4 8-10" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+                        <rect x="370" y="220" width="64" height="54" rx="10" fill="#003399" opacity="0.2" />
+                        <rect x="386" y="233" width="32" height="30" rx="6" fill="#003399" opacity="0.35" />
+                    </svg>
+                </div>
+            </section>
 
-                <!-- Username Input -->
-                <div class="relative">
-                    <div class="flex items-center">
-                        <i class="fas fa-user absolute left-3 text-white/60 text-sm pointer-events-none"></i>
-                        <input 
-                            type="text" 
-                            name="username" 
-                            placeholder="Username"
-                            value="{{ old('username') }}" 
-                            required 
-                            class="input-glass w-full pl-10 pr-3 py-2 rounded-lg text-white font-medium transition duration-300 text-sm"
+            <section class="auth-right">
+                <div class="auth-top">Butuh bantuan? Hubungi admin unit kerja.</div>
+
+                <h2 class="form-title">Selamat datang di SIPEBA</h2>
+                <p class="form-subtitle">Masukkan akun Anda untuk melanjutkan pengelolaan persediaan.</p>
+
+                @if ($errors->any())
+                    <div class="alert">
+                        <strong>Login gagal.</strong>
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('login') }}">
+                    @csrf
+
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input
+                            id="username"
+                            type="text"
+                            name="username"
+                            placeholder="Masukkan username"
+                            value="{{ old('username') }}"
+                            required
                             autocomplete="username"
                         >
+                        @error('username')
+                            <p class="form-hint">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('username')
-                        <p class="text-red-200 text-xs mt-1 flex items-center">
-                            <i class="fas fa-info-circle mr-1"></i>{{ $message }}
-                        </p>
-                    @enderror
-                </div>
 
-                <!-- Password Input -->
-                <div class="relative">
-                    <div class="flex items-center">
-                        <i class="fas fa-lock absolute left-3 text-white/60 text-sm pointer-events-none"></i>
-                        <input 
-                            type="password" 
-                            name="password" 
-                            placeholder="Password"
-                            required 
-                            class="input-glass w-full pl-10 pr-3 py-2 rounded-lg text-white font-medium transition duration-300 text-sm"
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            placeholder="Masukkan password"
+                            required
                             autocomplete="current-password"
                         >
+                        @error('password')
+                            <p class="form-hint">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('password')
-                        <p class="text-red-200 text-xs mt-1 flex items-center">
-                            <i class="fas fa-info-circle mr-1"></i>{{ $message }}
-                        </p>
-                    @enderror
-                </div>
 
-                <!-- Remember Me -->
-                <div class="pt-1">
-                    <label class="flex items-center cursor-pointer group">
-                        <input 
-                            type="checkbox" 
-                            name="remember" 
-                            {{ old('remember') ? 'checked' : '' }}
-                            class="w-4 h-4 rounded accent-blue-400 cursor-pointer"
-                        >
-                        <span class="ml-2 text-white/80 text-xs font-medium group-hover:text-white transition">
+                    <div class="form-row">
+                        <label class="remember">
+                            <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
                             Ingat saya
-                        </span>
-                    </label>
-                </div>
+                        </label>
+                    </div>
 
-                <!-- Login Button -->
-                <button 
-                    type="submit" 
-                    class="btn-solid w-full py-2 px-3 rounded-lg text-white font-bold uppercase tracking-wide text-xs md:text-sm shadow-lg border border-white/20 mt-4 group"
-                >
-                    <span class="flex items-center justify-center">
-                        <span>Sign In</span>
-                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition"></i>
-                    </span>
-                </button>
-            </form>
+                    <button type="submit" class="btn-primary">Masuk</button>
+                </form>
 
-            <!-- Test Accounts Section -->
-            <div class="mt-5 pt-4 border-t border-white/10">
-                <div class="flex items-center justify-center mb-2">
-                    <i class="fas fa-info-circle text-blue-200 mr-1 text-xs"></i>
-                    <h4 class="text-xs font-bold text-white/90 uppercase tracking-wide">
-                        Akun Demonstrasi
-                    </h4>
+                <div class="login-meta">
+                    <span>Tip:</span> Gunakan akun unit kerja resmi untuk mencatat penerimaan dan pengurangan barang.
                 </div>
-                <div class="space-y-1.5">
-                    <div class="glass-effect rounded-lg p-2 hover:bg-white/12 transition">
-                        <p class="text-xs text-white/80">
-                            <span class="font-semibold text-blue-100">Admin:</span>
-                            <code class="bg-black/30 px-1.5 py-0.5 rounded text-blue-100 font-mono text-xs">admin</code> / 
-                            <code class="bg-black/30 px-1.5 py-0.5 rounded text-blue-100 font-mono text-xs">password</code>
-                        </p>
-                    </div>
-                    <div class="glass-effect rounded-lg p-2 hover:bg-white/12 transition">
-                        <p class="text-xs text-white/80">
-                            <span class="font-semibold text-blue-100">Kepala:</span>
-                            <code class="bg-black/30 px-1.5 py-0.5 rounded text-blue-100 font-mono text-xs">kepala_1</code> / 
-                            <code class="bg-black/30 px-1.5 py-0.5 rounded text-blue-100 font-mono text-xs">password</code>
-                        </p>
-                    </div>
-                    <div class="glass-effect rounded-lg p-2 hover:bg-white/12 transition">
-                        <p class="text-xs text-white/80">
-                            <span class="font-semibold text-blue-100">Pengurus:</span>
-                            <code class="bg-black/30 px-1.5 py-0.5 rounded text-blue-100 font-mono text-xs">pengurus_1</code> / 
-                            <code class="bg-black/30 px-1.5 py-0.5 rounded text-blue-100 font-mono text-xs">password</code>
-                        </p>
-                    </div>
-                </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Footer -->
-        <div class="mt-4 md:mt-5 text-center">
-            <p class="text-white/70 text-xs font-medium text-shadow">
-                <i class="fas fa-copyright mr-1"></i> 2026 Setda Kabupaten Bantul - Manajemen Aset
-            </p>
+        <div class="footer">
+            2026 Setda Kabupaten Bantul - Manajemen Persediaan Barang
         </div>
     </div>
 </body>

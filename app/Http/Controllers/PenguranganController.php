@@ -20,10 +20,14 @@ class PenguranganController extends Controller
      */
     public function index(): View
     {
-        // Read-All: Semua user bisa lihat pengurangan dari semua unit
-        $pengurangan = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail'])
-            ->orderByDesc('tgl_keluar')
-            ->paginate(15);
+        $query = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail'])
+            ->orderByDesc('tgl_keluar');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+        }
+
+        $pengurangan = $query->paginate(15);
 
         return view('pengurangan.index', compact('pengurangan'));
     }
