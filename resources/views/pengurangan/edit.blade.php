@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-header">
     <h2>Edit Pengurangan</h2>
-    <p class="breadcrumbs">Home > Pengurangan > Edit > {{ $pengurangan->no_bukti }}</p>
+    <p class="breadcrumbs">Home > Pengurangan > Edit</p>
 </div>
 
 <form method="POST" action="{{ route('pengurangan.update', $pengurangan) }}" style="max-width: 800px;">
@@ -13,12 +13,6 @@
     @method('PUT')
 
     <h3 style="color: #003399; margin-top: 20px; margin-bottom: 15px;">Header Pengurangan</h3>
-
-    <div class="form-group">
-        <label for="no_bukti">No Bukti:</label>
-        <input type="text" name="no_bukti" id="no_bukti" value="{{ $pengurangan->no_bukti }}" disabled>
-        <small style="color: #999;">Nomor bukti tidak dapat diubah</small>
-    </div>
 
     <div class="form-group">
         <label for="tgl_keluar">Tanggal Keluar:</label>
@@ -74,23 +68,23 @@
 </form>
 
 <script type="application/json" id="barangData">
-@json($barang->mapWithKeys(fn($b) => [$b->id => ['stok' => $b->stok_saat_ini]])->toArray())
+    @json($barang - > mapWithKeys(fn($b) => [$b - > id => ['stok' => $b - > stok_saat_ini]]) - > toArray())
 </script>
 <script>
-const barangData = JSON.parse(document.getElementById('barangData').textContent);
+    const barangData = JSON.parse(document.getElementById('barangData').textContent);
 
-function updateStok(selectElement) {
-    const barangId = selectElement.value;
-    const stokCell = selectElement.closest('tr').querySelector('.stok-tersedia');
-    if (barangData[barangId]) {
-        stokCell.textContent = barangData[barangId].stok;
+    function updateStok(selectElement) {
+        const barangId = selectElement.value;
+        const stokCell = selectElement.closest('tr').querySelector('.stok-tersedia');
+        if (barangData[barangId]) {
+            stokCell.textContent = barangData[barangId].stok;
+        }
     }
-}
 
-document.querySelectorAll('.barang-select').forEach(select => {
-    select.addEventListener('change', function() {
-        updateStok(this);
+    document.querySelectorAll('.barang-select').forEach(select => {
+        select.addEventListener('change', function() {
+            updateStok(this);
+        });
     });
-});
 </script>
 @endsection

@@ -14,11 +14,6 @@
     <h3 style="color: #003399; margin-top: 20px; margin-bottom: 15px;">Header Pengurangan</h3>
 
     <div class="form-group">
-        <label for="no_bukti">No Bukti:</label>
-        <input type="text" name="no_bukti" id="no_bukti" value="{{ old('no_bukti') }}" required>
-    </div>
-
-    <div class="form-group">
         <label for="tgl_keluar">Tanggal Keluar:</label>
         <input type="date" name="tgl_keluar" id="tgl_keluar" value="{{ old('tgl_keluar', date('Y-m-d')) }}" required>
     </div>

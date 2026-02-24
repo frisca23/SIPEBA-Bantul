@@ -57,6 +57,12 @@
 
 <div style="margin-top: 20px;">
     <a href="{{ route('laporan.index') }}" class="btn btn-primary">Kembali ke Laporan</a>
-    <button onclick="window.print()" class="btn btn-success" style="margin-left: 10px;">Print</button>
+    <form action="{{ route('laporan.buku-penerimaan.export') }}" method="POST" style="display: inline;">
+        @csrf
+        <input type="hidden" name="tgl_awal" value="{{ $tglAwal->format('Y-m-d') }}">
+        <input type="hidden" name="tgl_akhir" value="{{ $tglAkhir->format('Y-m-d') }}">
+        <input type="hidden" name="unit_kerja_id" value="{{ $unitKerja->id }}">
+        <button type="submit" class="btn btn-success" style="margin-left: 10px;">Download Excel</button>
+    </form>
 </div>
 @endsection

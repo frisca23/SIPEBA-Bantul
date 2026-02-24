@@ -1,17 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Pengurangan: ' . $pengurangan->no_bukti)
+@section('title', 'Detail Pengurangan')
 
 @section('content')
 <div class="page-header">
-    <h2>Pengurangan: {{ $pengurangan->no_bukti }}</h2>
-    <p class="breadcrumbs">Home > Pengurangan > {{ $pengurangan->no_bukti }}</p>
+    <h2>Detail Pengurangan</h2>
+    <p class="breadcrumbs">Home > Pengurangan > Detail</p>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
     <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
         <h4 style="color: #003399; margin-bottom: 15px;">Informasi Pengurangan</h4>
-        <p><strong>No Bukti:</strong> {{ $pengurangan->no_bukti }}</p>
         <p><strong>Unit Kerja:</strong> {{ $pengurangan->unitKerja->nama_unit }}</p>
         <p><strong>Tanggal Keluar:</strong> {{ $pengurangan->tgl_keluar->format('d/m/Y') }}</p>
         <p><strong>Dibuat oleh:</strong> {{ $pengurangan->creator->name }}</p>
@@ -25,18 +24,18 @@
         <h4 style="color: #D32F2F; margin-bottom: 15px;">Status</h4>
         <p style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
             @if($pengurangan->status === 'pending')
-                <span class="badge badge-pending">PENDING</span>
+            <span class="badge badge-pending">PENDING</span>
             @elseif($pengurangan->status === 'approved')
-                <span class="badge badge-approved">DISETUJUI</span>
+            <span class="badge badge-approved">DISETUJUI</span>
             @else
-                <span class="badge badge-rejected">DITOLAK</span>
+            <span class="badge badge-rejected">DITOLAK</span>
             @endif
         </p>
         <small style="color: #666;">
             @if($pengurangan->status === 'pending')
-                Menunggu persetujuan dari Kepala Bagian
+            Menunggu persetujuan dari Kepala Bagian
             @elseif($pengurangan->status === 'approved')
-                Stok barang sudah dikurangi
+            Stok barang sudah dikurangi
             @endif
         </small>
     </div>
@@ -90,8 +89,8 @@
     @can('approve', $pengurangan)
     <form action="{{ route('pengurangan.approve', $pengurangan) }}" method="POST" style="display: inline;">
         @csrf
-        <button type="submit" class="btn btn-success" 
-                onclick="return confirm('Setujui pengurangan ini? Stok akan dikurangi.')">
+        <button type="submit" class="btn btn-success"
+            onclick="return confirm('Setujui pengurangan ini? Stok akan dikurangi.')">
             Setujui Pengurangan
         </button>
     </form>

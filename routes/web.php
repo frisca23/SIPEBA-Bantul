@@ -42,8 +42,11 @@ Route::middleware('auth')->group(function () {
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::post('/buku-penerimaan', [LaporanController::class, 'bukuPenerimaan'])->name('buku-penerimaan');
+        Route::post('/buku-penerimaan/export', [LaporanController::class, 'exportBukuPenerimaan'])->name('buku-penerimaan.export');
         Route::post('/buku-pengurangan', [LaporanController::class, 'bukuPengurangan'])->name('buku-pengurangan');
+        Route::post('/buku-pengurangan/export', [LaporanController::class, 'exportBukuPengurangan'])->name('buku-pengurangan.export');
         Route::post('/hasil-fisik-stock-opname', [LaporanController::class, 'hasilFisikStockOpname'])->name('hasil-fisik-stock-opname');
+        Route::post('/hasil-fisik-stock-opname/export', [LaporanController::class, 'exportHasilFisikStockOpname'])->name('hasil-fisik-stock-opname.export');
         Route::post('/berita-acara-pemantauan', [LaporanController::class, 'beritaAcaraPemantauan'])->name('berita-acara-pemantauan');
         Route::post('/rekonsiliasi', [LaporanController::class, 'rekonsiliasi'])->name('rekonsiliasi');
     });
@@ -54,4 +57,14 @@ Route::middleware('auth')->group(function () {
 
     // User Management (Super Admin only)
     Route::resource('users', UserController::class)->except(['show']);
+});
+
+// Test route for PhpSpreadsheet
+Route::get('/test-spreadsheet', function () {
+    try {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        return 'PhpSpreadsheet loaded successfully!';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
 });
