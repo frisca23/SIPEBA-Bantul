@@ -482,6 +482,15 @@
             Pengurangan
         </a>
 
+        <a href="{{ route('stock-opname.index') }}" class="{{ request()->routeIs('stock-opname.*') ? 'active' : '' }}">
+            {{-- Clipboard / checklist icon --}}
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 0a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2m-6 0a2 2 0 012-2h2a2 2 0 012 2"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h8M8 15h8"/>
+            </svg>
+            Stock Opname
+        </a>
+
         <div class="sidebar-section-label">Laporan</div>
 
         <a href="{{ route('laporan.index') }}" class="{{ request()->routeIs('laporan.*') ? 'active' : '' }}">
