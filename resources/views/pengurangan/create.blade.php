@@ -19,16 +19,6 @@
                 <input type="text" name="no_bukti" id="no_bukti" value="{{ old('no_bukti') }}" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Masukkan Nomor Bukti">
             </div>
 
-<<<<<<< Updated upstream
-    <div class="form-group">
-        <label for="no_bukti">No Bukti:</label>
-        <input type="text" name="no_bukti" id="no_bukti" value="{{ old('no_bukti') }}" required>
-    </div>
-
-    <div class="form-group">
-        <label for="tgl_keluar">Tanggal Keluar:</label>
-        <input type="date" name="tgl_keluar" id="tgl_keluar" value="{{ old('tgl_keluar', date('Y-m-d')) }}" required>
-=======
             <div class="form-group" style="margin-top: 15px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div class="form-group">
@@ -104,7 +94,6 @@
                 <input type="text" id="jumlah_harga" readonly style="width: 100%; padding: 8px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px; color: #2e7d32; font-weight: bold;">
             </div>
         </div>
->>>>>>> Stashed changes
     </div>
 
     <div class="form-group" style="margin-top: 20px;">

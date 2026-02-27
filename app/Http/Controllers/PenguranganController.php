@@ -20,29 +20,18 @@ class PenguranganController extends Controller
      */
     public function index(): View
     {
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-        // Read-All: Semua user bisa lihat pengurangan dari semua unit
-        $pengurangan = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail'])
-            ->orderByDesc('tgl_keluar')
-            ->paginate(15);
-=======
-        $query = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail.barang.jenisBarang'])
-=======
-        $query = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail'])
->>>>>>> 9a8255536bda66b31d225678e21a7b5bee3ceec0
-            ->orderByDesc('tgl_keluar');
+        // Semua user dapat melihat pengurangan, super admin dapat melihat semua unit
+        $query = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail']);
 
+        // Urutkan berdasarkan tanggal keluar terbaru
+        $query = $query->orderByDesc('tgl_keluar');
+
+        // Jika bukan super admin, batasi ke unit kerja pengguna
         if (Auth::user()->role !== 'super_admin') {
-            $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+            $query = $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
         }
 
-<<<<<<< HEAD
-        $pengurangan = $query->paginate(50);
->>>>>>> Stashed changes
-=======
         $pengurangan = $query->paginate(15);
->>>>>>> 9a8255536bda66b31d225678e21a7b5bee3ceec0
 
         return view('pengurangan.index', compact('pengurangan'));
     }
