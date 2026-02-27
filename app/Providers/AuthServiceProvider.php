@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Barang;
+use App\Models\JenisBarang;
 use App\Models\Pengurangan;
 use App\Models\Penerimaan;
 use App\Models\StockOpname;
 use App\Policies\BarangPolicy;
+use App\Policies\JenisBarangPolicy;
 use App\Policies\PenerimaanPolicy;
 use App\Policies\PenguranganPolicy;
 use App\Policies\StockOpnamePolicy;
@@ -22,6 +24,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Barang::class => BarangPolicy::class,
+        JenisBarang::class => JenisBarangPolicy::class,
         Penerimaan::class => PenerimaanPolicy::class,
         Pengurangan::class => PenguranganPolicy::class,
         StockOpname::class => StockOpnamePolicy::class,

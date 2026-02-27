@@ -18,15 +18,29 @@ class BarangController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        // Ambil barang - semua user bisa lihat semua barang (Read-All)
-        $barang = Barang::with(['unitKerja', 'jenisBarang'])
-            ->orderBy('unit_kerja_id')
-            ->orderBy('nama_barang')
-            ->paginate(15);
+        $query = Barang::with(['unitKerja', 'jenisBarang'])
+            ->orderBy('nama_barang');
 
-        return view('barang.index', compact('barang'));
+        $selectedUnit = $request->get('unit_kerja_id', 'all');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+        } elseif ($selectedUnit !== 'all') {
+            $query->where('unit_kerja_id', $selectedUnit);
+        }
+
+        $barang = $query->paginate(15)->withQueryString();
+        $unitKerja = Auth::user()->role === 'super_admin'
+            ? UnitKerja::orderBy('nama_unit')->get()
+            : collect();
+
+        if ($request->ajax()) {
+            return view('barang.partials.table', compact('barang'));
+        }
+
+        return view('barang.index', compact('barang', 'unitKerja', 'selectedUnit'));
     }
 
     /**
@@ -55,17 +69,6 @@ class BarangController extends Controller
             'nama_barang' => 'required|string|max:255',
             'satuan' => 'required|string|max:50',
         ]);
-
-        // Cek unique constraint (unit_kerja_id + kode_barang)
-        $exists = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)
-            ->where('kode_barang', $validated['kode_barang'])
-            ->exists();
-
-        if ($exists) {
-            return back()->withInput()->withErrors([
-                'kode_barang' => 'Kode barang sudah terdaftar untuk unit kerja ini'
-            ]);
-        }
 
         Barang::create([
             'unit_kerja_id' => Auth::user()->unit_kerja_id,
@@ -131,9 +134,24 @@ class BarangController extends Controller
     {
         $this->authorize('delete', $barang);
 
+        // Cek apakah barang sudah digunakan di transaksi penerimaan
+        if ($barang->penerimaanDetail()->exists()) {
+            return back()->withErrors(['message' => 'Barang tidak dapat dihapus karena sudah digunakan dalam transaksi penerimaan.']);
+        }
+
+        // Cek apakah barang sudah digunakan di transaksi pengurangan
+        if ($barang->penguranganDetail()->exists()) {
+            return back()->withErrors(['message' => 'Barang tidak dapat dihapus karena sudah digunakan dalam transaksi pengurangan.']);
+        }
+
+        // Cek apakah barang memiliki stok
+        if ($barang->stok_saat_ini > 0) {
+            return back()->withErrors(['message' => 'Barang tidak dapat dihapus karena masih memiliki stok tersisa (' . $barang->stok_saat_ini . ' ' . $barang->satuan . ').']);
+        }
+
         $barang->delete();
 
         return redirect()->route('barang.index')
-            ->with('success', 'Barang berhasil dihapus');
+            ->with('success', 'Barang "' . $barang->nama_barang . '" berhasil dihapus');
     }
 }

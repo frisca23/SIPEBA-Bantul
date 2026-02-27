@@ -111,6 +111,32 @@ function updateTotal() {
     }).format(grand);
 }
 
+function checkDuplicateBarang(row) {
+    const selectedBarangId = row.querySelector('.barang-select').value;
+    const selectedBarangText = row.querySelector('.barang-select').options[row.querySelector('.barang-select').selectedIndex].text;
+    
+    if (!selectedBarangId) return; // Skip jika belum memilih
+    
+    let duplicateCount = 0;
+    document.querySelectorAll('.detail-row').forEach(otherRow => {
+        if (otherRow !== row && otherRow.querySelector('.barang-select').value === selectedBarangId) {
+            duplicateCount++;
+        }
+    });
+    
+    if (duplicateCount > 0) {
+        alert('Barang "' + selectedBarangText + '" sudah ada dalam daftar. Setiap barang hanya boleh ditambahkan sekali!');
+        row.querySelector('.barang-select').value = '';
+    }
+}
+
+document.querySelectorAll('.barang-select').forEach(select => {
+    select.addEventListener('change', function() {
+        checkDuplicateBarang(select.closest('.detail-row'));
+        updateTotal();
+    });
+});
+
 document.querySelectorAll('.jumlah-input, .harga-input').forEach(input => {
     input.addEventListener('input', updateTotal);
 });

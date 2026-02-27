@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\JenisBarangController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenerimaanController;
 use App\Http\Controllers\PenguranganController;
 use App\Http\Controllers\RekapSetdaController;
+use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Master Data
     Route::resource('barang', BarangController::class);
+    Route::resource('jenis-barang', JenisBarangController::class);
 
     // Transactions
     Route::resource('penerimaan', PenerimaanController::class);
@@ -37,6 +40,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('pengurangan', PenguranganController::class);
     Route::post('/pengurangan/{pengurangan}/approve', [PenguranganController::class, 'approve'])
         ->name('pengurangan.approve');
+
+    Route::resource('stock-opname', StockOpnameController::class);
+    Route::post('/stock-opname/{stockOpname}/approve', [StockOpnameController::class, 'approve'])
+        ->name('stock-opname.approve');
 
     // Laporan (Reports)
     Route::prefix('laporan')->name('laporan.')->group(function () {

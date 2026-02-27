@@ -48,32 +48,36 @@
                 @endif
             </td>
             <td>
-                <a href="{{ route('penerimaan.show', $item) }}" class="btn btn-primary btn-sm">Lihat</a>
-                
-                @can('update', $item)
-                <a href="{{ route('penerimaan.edit', $item) }}" class="btn btn-warning btn-sm">Edit</a>
-                @endcan
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="{{ route('penerimaan.show', $item) }}" class="btn btn-primary btn-sm">Lihat</a>
+                    
+                    @can('update', $item)
+                    <a href="{{ route('penerimaan.edit', $item) }}" class="btn btn-warning btn-sm">Edit</a>
+                    @endcan
 
-                @can('approve', $item)
-                <form action="{{ route('penerimaan.approve', $item) }}" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-success btn-sm" 
-                            onclick="return confirm('Setujui penerimaan ini? Stok akan diperbarui.')">
-                        Setujui
-                    </button>
-                </form>
-                @endcan
+                    @can('delete', $item)
+                    <form action="{{ route('penerimaan.destroy', $item) }}" method="POST" style="display: inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger btn-sm" 
+                                onclick="return confirm('Hapus penerimaan ini?')">
+                            Hapus
+                        </button>
+                    </form>
+                    @endcan
 
-                @can('delete', $item)
-                <form action="{{ route('penerimaan.destroy', $item) }}" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm" 
-                            onclick="return confirm('Hapus penerimaan ini?')">
-                        Hapus
-                    </button>
-                </form>
-                @endcan
+                    @can('approve', $item)
+                    @if($item->status === 'pending')
+                    <form action="{{ route('penerimaan.approve', $item) }}" method="POST" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-success btn-sm" 
+                                onclick="return confirm('Setujui penerimaan ini? Stok akan diperbarui.')">
+                            Setujui
+                        </button>
+                    </form>
+                    @endif
+                    @endcan
+                </div>
             </td>
         </tr>
         @empty

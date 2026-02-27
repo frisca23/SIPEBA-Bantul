@@ -36,8 +36,9 @@ class PenerimaanPolicy
      */
     public function update(User $user, Penerimaan $penerimaan): bool
     {
-        // Write-Own: Hanya bisa update penerimaan milik unit sendiri
-        return $user->unit_kerja_id === $penerimaan->unit_kerja_id && $penerimaan->status === 'pending';
+        // Pengurus dan Kepala Bagian bisa edit kapan saja
+        return $user->unit_kerja_id === $penerimaan->unit_kerja_id 
+            && in_array($user->role, ['pengurus_barang', 'kepala_bagian']);
     }
 
     /**
@@ -45,18 +46,20 @@ class PenerimaanPolicy
      */
     public function delete(User $user, Penerimaan $penerimaan): bool
     {
-        // Write-Own: Hanya bisa delete penerimaan milik unit sendiri (jika masih pending)
-        return $user->unit_kerja_id === $penerimaan->unit_kerja_id && $penerimaan->status === 'pending';
+        // Pengurus dan Kepala Bagian bisa hapus kapan saja
+        return $user->unit_kerja_id === $penerimaan->unit_kerja_id 
+            && in_array($user->role, ['pengurus_barang', 'kepala_bagian']);
     }
 
     /**
      * Determine whether the user can approve the model.
-     * Only kepala_bagian can approve transactions from their own unit.
+     * Only kepala_bagian can approve transactions from their own unit (and status is pending)
      */
     public function approve(User $user, Penerimaan $penerimaan): bool
     {
         return $user->unit_kerja_id === $penerimaan->unit_kerja_id 
-            && $user->role === 'kepala_bagian';
+            && $user->role === 'kepala_bagian'
+            && $penerimaan->status === 'pending';
     }
 
     /**

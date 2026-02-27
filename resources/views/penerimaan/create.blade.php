@@ -14,8 +14,24 @@
     <h3 style="color: #003399; margin-top: 20px; margin-bottom: 15px;">Header Penerimaan</h3>
 
     <div class="form-group">
-        <label for="no_dokumen">No Dokumen:</label>
-        <input type="text" name="no_dokumen" id="no_dokumen" value="{{ old('no_dokumen') }}" required>
+        <label for="no_dokumen">
+            No Dokumen Faktur:
+            <span style="color: #666; font-size: 0.9em;">(Opsional - untuk referensi/catatan)</span>
+        </label>
+        <input type="text" 
+               name="no_dokumen" 
+               id="no_dokumen" 
+               value="{{ old('no_dokumen') }}" 
+               placeholder="Cth: BK 362, PO-2025-001, SPJ-001, atau kosongkan"
+               style="font-size: 0.95em;">
+        <small style="color: #666; display: block; margin-top: 5px;">
+            💡 <strong>Informasi:</strong> Nomor dokumen faktur digunakan untuk referensi dan catatan saja. 
+            Bisa memasukkan nomor yang sama lebih dari satu kali (untuk mencatat multiple penerimaan dari dokumen yang sama, 
+            atau untuk mencatat ulang/koreksi data). Setiap unit kerja dapat menginputkan nomor faktur yang sama.
+        </small>
+        @error('no_dokumen')
+            <span class="error-message" style="color: #d32f2f; margin-top: 5px; display: block;">{{ $message }}</span>
+        @enderror
     </div>
 
     <div class="form-group">
@@ -140,6 +156,25 @@ function updateTotal() {
     }).format(grand);
 }
 
+function checkDuplicateBarang(row) {
+    const selectedBarangId = row.querySelector('.barang-select').value;
+    const selectedBarangText = row.querySelector('.barang-select').options[row.querySelector('.barang-select').selectedIndex].text;
+    
+    if (!selectedBarangId) return; // Skip jika belum memilih
+    
+    let duplicateCount = 0;
+    document.querySelectorAll('.detail-row').forEach(otherRow => {
+        if (otherRow !== row && otherRow.querySelector('.barang-select').value === selectedBarangId) {
+            duplicateCount++;
+        }
+    });
+    
+    if (duplicateCount > 0) {
+        alert('Barang "' + selectedBarangText + '" sudah ada dalam daftar. Setiap barang hanya boleh ditambahkan sekali!');
+        row.querySelector('.barang-select').value = '';
+    }
+}
+
 document.getElementById('add-row').addEventListener('click', function() {
     const tbody = document.getElementById('detail-body');
     const newRow = document.createElement('tr');
@@ -166,8 +201,21 @@ document.getElementById('add-row').addEventListener('click', function() {
     tbody.appendChild(newRow);
     rowCount++;
     
+    const barangSelect = newRow.querySelector('.barang-select');
+    barangSelect.addEventListener('change', function() {
+        checkDuplicateBarang(newRow);
+        updateTotal();
+    });
+    
     newRow.querySelector('.jumlah-input').addEventListener('input', updateTotal);
     newRow.querySelector('.harga-input').addEventListener('input', updateTotal);
+});
+
+document.querySelectorAll('.barang-select').forEach(select => {
+    select.addEventListener('change', function() {
+        checkDuplicateBarang(select.closest('.detail-row'));
+        updateTotal();
+    });
 });
 
 document.querySelectorAll('.jumlah-input, .harga-input').forEach(input => {
