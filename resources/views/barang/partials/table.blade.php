@@ -26,8 +26,7 @@
                 Rp {{ number_format($item->harga_terakhir, 2, ',', '.') }}
             </td>
             <td>
-                <a href="{{ route('barang.show', $item) }}" class="btn btn-primary btn-sm">Lihat</a>
-                
+                <a href="{{ route('barang.show', $item) }}" class="btn btn-primary btn-sm">Lihat</a>                
                 @can('update', $item)
                 <a href="{{ route('barang.edit', $item) }}" class="btn btn-warning btn-sm">Edit</a>
                 @endcan

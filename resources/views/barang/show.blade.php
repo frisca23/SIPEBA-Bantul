@@ -50,8 +50,7 @@
 
 @can('update', $barang)
 <div style="margin-bottom: 20px;">
-    <a href="{{ route('barang.edit', $barang) }}" class="btn btn-warning">Edit Barang</a>
-    @can('delete', $barang)
+    <a href="{{ route('barang.edit', $barang) }}" class="btn btn-warning">Edit Barang</a>    @can('delete', $barang)
     <form action="{{ route('barang.destroy', $barang) }}" method="POST" style="display: inline;">
         @csrf
         @method('DELETE')

@@ -12,9 +12,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
-// Public route
+// Public route - Redirect to login
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 // Authentication Routes
@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Master Data
+    Route::get('barang/{barang}/kartu', [BarangController::class, 'kartu'])->name('barang.kartu');
     Route::resource('barang', BarangController::class);
     Route::resource('jenis-barang', JenisBarangController::class);
 

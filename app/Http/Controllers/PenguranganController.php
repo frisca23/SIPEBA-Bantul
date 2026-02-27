@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\PenerimaanDetail;
 use App\Models\Pengurangan;
 use App\Models\PenguranganDetail;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -18,18 +19,99 @@ class PenguranganController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $query = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail'])
-            ->orderByDesc('tgl_keluar');
+        $selectedBarang = $request->get('barang_id', 'all');
+        $selectedTahun = $request->get('tahun', 'all');
+
+        $query = PenguranganDetail::select('pengurangan_detail.*')
+            ->join('pengurangan', 'pengurangan_detail.pengurangan_id', '=', 'pengurangan.id')
+            ->with(['barang', 'pengurangan.unitKerja', 'pengurangan.creator'])
+            ->orderByDesc('pengurangan.tgl_keluar')
+            ->orderByDesc('pengurangan_detail.id');
 
         if (Auth::user()->role !== 'super_admin') {
-            $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+            $query->where('pengurangan.unit_kerja_id', Auth::user()->unit_kerja_id);
         }
 
-        $pengurangan = $query->paginate(15);
+        if ($selectedBarang !== 'all') {
+            $query->where('pengurangan_detail.barang_id', $selectedBarang);
+        }
 
-        return view('pengurangan.index', compact('pengurangan'));
+        if ($selectedTahun !== 'all') {
+            $query->whereYear('pengurangan.tgl_keluar', $selectedTahun);
+        }
+
+        $penguranganDetails = $query->paginate(15)->withQueryString();
+
+        $barangOptions = Barang::query()
+            ->when(Auth::user()->role !== 'super_admin', function ($barangQuery) {
+                $barangQuery->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+            })
+            ->orderBy('nama_barang')
+            ->get(['id', 'nama_barang']);
+
+        $tahunOptionsQuery = Pengurangan::query()
+            ->selectRaw('YEAR(tgl_keluar) as tahun')
+            ->distinct()
+            ->orderByDesc('tahun');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $tahunOptionsQuery->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+        }
+
+        if ($selectedBarang !== 'all') {
+            $tahunOptionsQuery->join('pengurangan_detail', 'pengurangan_detail.pengurangan_id', '=', 'pengurangan.id')
+                ->where('pengurangan_detail.barang_id', $selectedBarang);
+        }
+
+        $tahunOptions = $tahunOptionsQuery->pluck('tahun');
+
+        $totalKeluarQuery = PenguranganDetail::query()
+            ->join('pengurangan', 'pengurangan_detail.pengurangan_id', '=', 'pengurangan.id');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $totalKeluarQuery->where('pengurangan.unit_kerja_id', Auth::user()->unit_kerja_id);
+        }
+
+        if ($selectedBarang !== 'all') {
+            $totalKeluarQuery->where('pengurangan_detail.barang_id', $selectedBarang);
+        }
+
+        if ($selectedTahun !== 'all') {
+            $totalKeluarQuery->whereYear('pengurangan.tgl_keluar', $selectedTahun);
+        }
+
+        $totalKeluar = (int) $totalKeluarQuery->sum('pengurangan_detail.jumlah_kurang');
+
+        $totalMasukQuery = PenerimaanDetail::query()
+            ->join('penerimaan', 'penerimaan_detail.penerimaan_id', '=', 'penerimaan.id');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $totalMasukQuery->where('penerimaan.unit_kerja_id', Auth::user()->unit_kerja_id);
+        }
+
+        if ($selectedBarang !== 'all') {
+            $totalMasukQuery->where('penerimaan_detail.barang_id', $selectedBarang);
+        }
+
+        if ($selectedTahun !== 'all') {
+            $totalMasukQuery->whereYear('penerimaan.tgl_dokumen', $selectedTahun);
+        }
+
+        $totalMasuk = (int) $totalMasukQuery->sum('penerimaan_detail.jumlah_masuk');
+        $saldo = $totalMasuk - $totalKeluar;
+
+        return view('pengurangan.index', compact(
+            'penguranganDetails',
+            'barangOptions',
+            'tahunOptions',
+            'selectedBarang',
+            'selectedTahun',
+            'totalMasuk',
+            'totalKeluar',
+            'saldo'
+        ));
     }
 
     /**

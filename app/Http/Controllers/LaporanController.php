@@ -195,7 +195,7 @@ class LaporanController extends Controller
 
     /**
      * Rekonsiliasi Persediaan Report
-     * Per jenis barang
+     * Format Pemerintah dengan struktur ASET TETAP dan ASET LANCAR
      */
     public function rekonsiliasi(Request $request): View
     {
@@ -203,53 +203,31 @@ class LaporanController extends Controller
             'tgl_awal' => 'required|date',
             'tgl_akhir' => 'required|date|after_or_equal:tgl_awal',
             'unit_kerja_id' => 'required|exists:unit_kerja,id',
-            'mode' => 'nullable|in:kategori,jenis',
         ]);
 
         $tglAwal = Carbon::parse($validated['tgl_awal']);
         $tglAkhir = Carbon::parse($validated['tgl_akhir']);
-        $mode = $validated['mode'] ?? 'kategori';
 
         $mapPenambahan = function (?string $sumberDana): string {
             $value = Str::lower($sumberDana ?? '');
-
-            if (Str::contains($value, 'belanja modal')) {
-                return 'belanja_modal';
-            }
-            if (Str::contains($value, 'dropping')) {
-                return 'dropping';
-            }
-            if (Str::contains($value, 'hibah')) {
-                return 'hibah';
-            }
-            if (
-                Str::contains($value, 'belanja barang')
-                || Str::contains($value, 'barang/jasa')
-                || Str::contains($value, 'barang jasa')
-                || Str::contains($value, 'barang dan jasa')
-            ) {
-                return 'belanja_barang';
-            }
-
+            if (Str::contains($value, 'belanja modal')) return 'belanja_modal';
+            if (Str::contains($value, 'dropping')) return 'dropping';
+            if (Str::contains($value, 'hibah')) return 'hibah';
             return 'belanja_barang';
         };
 
         $mapPengurangan = function (?string $keperluan): string {
             $value = Str::lower($keperluan ?? '');
-
-            if (Str::contains($value, 'penghapusan')) {
-                return 'penghapusan';
-            }
-
+            if (Str::contains($value, 'penghapusan')) return 'penghapusan';
             return 'mutasi_keluar';
         };
 
-        $initRow = function (string $label, $barangId = null, $namaBarang = null): array {
+        $initRow = function (string $label, bool $isBold = false, $jenisId = null, $namaJenis = null): array {
             return [
                 'uraian' => $label,
-                'barang_id' => $barangId,
-                'nama_barang' => $namaBarang,
-                'is_detail' => !is_null($barangId),
+                'is_bold' => $isBold,
+                'jenis_id' => $jenisId,
+                'nama_jenis' => $namaJenis,
                 'saldo_awal_unit' => 0,
                 'saldo_awal_val' => 0.0,
                 'penambahan' => [
@@ -268,16 +246,8 @@ class LaporanController extends Controller
             ];
         };
 
-        $getKey = function ($row) use ($mode): string {
-            return $mode === 'kategori' ? 'persediaan' : (string) $row->jenis_id;
-        };
-
-        $getLabel = function ($row) use ($mode): string {
-            return $mode === 'kategori' ? 'PERSEDIAAN' : $row->nama_jenis;
-        };
-
+        // Query untuk data persediaan per barang individual
         $rows = [];
-        $detailRows = [];
 
         $penerimaanBase = DB::table('penerimaan_detail')
             ->join('penerimaan', 'penerimaan_detail.penerimaan_id', '=', 'penerimaan.id')
@@ -286,10 +256,10 @@ class LaporanController extends Controller
             ->where('penerimaan.unit_kerja_id', $validated['unit_kerja_id'])
             ->where('penerimaan.status', 'approved')
             ->select([
-                'jenis_barang.id as jenis_id',
-                'jenis_barang.nama_jenis',
                 'barang.id as barang_id',
                 'barang.nama_barang',
+                'jenis_barang.id as jenis_id',
+                'jenis_barang.nama_jenis',
                 'penerimaan_detail.jumlah_masuk',
                 'penerimaan_detail.total_harga',
                 'penerimaan.sumber_dana',
@@ -303,99 +273,63 @@ class LaporanController extends Controller
             ->where('pengurangan.unit_kerja_id', $validated['unit_kerja_id'])
             ->where('pengurangan.status', 'approved')
             ->select([
-                'jenis_barang.id as jenis_id',
-                'jenis_barang.nama_jenis',
                 'barang.id as barang_id',
                 'barang.nama_barang',
+                'jenis_barang.id as jenis_id',
+                'jenis_barang.nama_jenis',
                 'pengurangan_detail.jumlah_kurang',
                 'pengurangan.keperluan',
                 'pengurangan.tgl_keluar',
                 'barang.harga_terakhir',
             ]);
 
-        $penerimaanBefore = (clone $penerimaanBase)
-            ->where('penerimaan.tgl_dokumen', '<', $tglAwal)
-            ->get();
+        // Saldo Awal
+        $penerimaanBefore = (clone $penerimaanBase)->where('penerimaan.tgl_dokumen', '<', $tglAwal)->get();
         foreach ($penerimaanBefore as $row) {
-            $key = $getKey($row);
+            $key = (string) $row->barang_id;
             if (!isset($rows[$key])) {
-                $rows[$key] = $initRow($getLabel($row));
+                $rows[$key] = $initRow($row->nama_barang, false, $row->jenis_id, $row->nama_jenis);
             }
             $rows[$key]['saldo_awal_unit'] += (int) $row->jumlah_masuk;
             $rows[$key]['saldo_awal_val'] += (float) $row->total_harga;
-
-            $detailKey = $key . '_' . $row->barang_id;
-            if (!isset($detailRows[$detailKey])) {
-                $detailRows[$detailKey] = $initRow($row->nama_barang, $row->barang_id, $row->nama_barang);
-                $detailRows[$detailKey]['parent_key'] = $key;
-            }
-            $detailRows[$detailKey]['saldo_awal_unit'] += (int) $row->jumlah_masuk;
-            $detailRows[$detailKey]['saldo_awal_val'] += (float) $row->total_harga;
         }
 
-        $penguranganBefore = (clone $penguranganBase)
-            ->where('pengurangan.tgl_keluar', '<', $tglAwal)
-            ->get();
+        $penguranganBefore = (clone $penguranganBase)->where('pengurangan.tgl_keluar', '<', $tglAwal)->get();
         foreach ($penguranganBefore as $row) {
-            $key = $getKey($row);
+            $key = (string) $row->barang_id;
             if (!isset($rows[$key])) {
-                $rows[$key] = $initRow($getLabel($row));
+                $rows[$key] = $initRow($row->nama_barang, false, $row->jenis_id, $row->nama_jenis);
             }
             $rows[$key]['saldo_awal_unit'] -= (int) $row->jumlah_kurang;
             $rows[$key]['saldo_awal_val'] -= (int) $row->jumlah_kurang * (float) $row->harga_terakhir;
-
-            $detailKey = $key . '_' . $row->barang_id;
-            if (!isset($detailRows[$detailKey])) {
-                $detailRows[$detailKey] = $initRow($row->nama_barang, $row->barang_id, $row->nama_barang);
-                $detailRows[$detailKey]['parent_key'] = $key;
-            }
-            $detailRows[$detailKey]['saldo_awal_unit'] -= (int) $row->jumlah_kurang;
-            $detailRows[$detailKey]['saldo_awal_val'] -= (int) $row->jumlah_kurang * (float) $row->harga_terakhir;
         }
 
-        $penerimaanIn = (clone $penerimaanBase)
-            ->whereBetween('penerimaan.tgl_dokumen', [$tglAwal, $tglAkhir])
-            ->get();
+        // Penambahan selama periode
+        $penerimaanIn = (clone $penerimaanBase)->whereBetween('penerimaan.tgl_dokumen', [$tglAwal, $tglAkhir])->get();
         foreach ($penerimaanIn as $row) {
-            $key = $getKey($row);
+            $key = (string) $row->barang_id;
             if (!isset($rows[$key])) {
-                $rows[$key] = $initRow($getLabel($row));
+                $rows[$key] = $initRow($row->nama_barang, false, $row->jenis_id, $row->nama_jenis);
             }
             $type = $mapPenambahan($row->sumber_dana);
             $rows[$key]['penambahan'][$type]['unit'] += (int) $row->jumlah_masuk;
             $rows[$key]['penambahan'][$type]['val'] += (float) $row->total_harga;
-
-            $detailKey = $key . '_' . $row->barang_id;
-            if (!isset($detailRows[$detailKey])) {
-                $detailRows[$detailKey] = $initRow($row->nama_barang, $row->barang_id, $row->nama_barang);
-                $detailRows[$detailKey]['parent_key'] = $key;
-            }
-            $detailRows[$detailKey]['penambahan'][$type]['unit'] += (int) $row->jumlah_masuk;
-            $detailRows[$detailKey]['penambahan'][$type]['val'] += (float) $row->total_harga;
         }
 
-        $penguranganIn = (clone $penguranganBase)
-            ->whereBetween('pengurangan.tgl_keluar', [$tglAwal, $tglAkhir])
-            ->get();
+        // Pengurangan selama periode
+        $penguranganIn = (clone $penguranganBase)->whereBetween('pengurangan.tgl_keluar', [$tglAwal, $tglAkhir])->get();
         foreach ($penguranganIn as $row) {
-            $key = $getKey($row);
+            $key = (string) $row->barang_id;
             if (!isset($rows[$key])) {
-                $rows[$key] = $initRow($getLabel($row));
+                $rows[$key] = $initRow($row->nama_barang, false, $row->jenis_id, $row->nama_jenis);
             }
             $type = $mapPengurangan($row->keperluan);
             $value = (int) $row->jumlah_kurang * (float) $row->harga_terakhir;
             $rows[$key]['pengurangan'][$type]['unit'] += (int) $row->jumlah_kurang;
             $rows[$key]['pengurangan'][$type]['val'] += $value;
-
-            $detailKey = $key . '_' . $row->barang_id;
-            if (!isset($detailRows[$detailKey])) {
-                $detailRows[$detailKey] = $initRow($row->nama_barang, $row->barang_id, $row->nama_barang);
-                $detailRows[$detailKey]['parent_key'] = $key;
-            }
-            $detailRows[$detailKey]['pengurangan'][$type]['unit'] += (int) $row->jumlah_kurang;
-            $detailRows[$detailKey]['pengurangan'][$type]['val'] += $value;
         }
 
+        // Hitung saldo akhir
         foreach ($rows as $key => $row) {
             $penambahanVal = array_sum(array_column($row['penambahan'], 'val'));
             $penambahanUnit = array_sum(array_column($row['penambahan'], 'unit'));
@@ -406,74 +340,121 @@ class LaporanController extends Controller
             $rows[$key]['saldo_akhir_val'] = $row['saldo_awal_val'] + $penambahanVal - $penguranganVal;
         }
 
-        foreach ($detailRows as $detailKey => $detail) {
-            $penambahanVal = array_sum(array_column($detail['penambahan'], 'val'));
-            $penambahanUnit = array_sum(array_column($detail['penambahan'], 'unit'));
-            $penguranganVal = array_sum(array_column($detail['pengurangan'], 'val'));
-            $penguranganUnit = array_sum(array_column($detail['pengurangan'], 'unit'));
+        // Konversi ke indexed array
+        $rows = array_values($rows);
 
-            $detailRows[$detailKey]['saldo_akhir_unit'] = $detail['saldo_awal_unit'] + $penambahanUnit - $penguranganUnit;
-            $detailRows[$detailKey]['saldo_akhir_val'] = $detail['saldo_awal_val'] + $penambahanVal - $penguranganVal;
-        }
+        // Struktur Laporan sesuai format pemerintah
+        $groups = [];
 
-        if ($mode === 'kategori' && empty($rows)) {
-            $rows['persediaan'] = $initRow('PERSEDIAAN');
-        }
+        // ASET TETAP (placeholder dengan nilai 0 karena sistem ini hanya track persediaan)
+        $asetTetapRows = [];
+        
+        // 1. KIBAR TANAH
+        $asetTetapRows[] = array_merge($initRow('KIBAR TANAH', true), ['nomor' => 1]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Kibar Tanah'), ['nomor' => null, 'indent' => 1]);
+        
+        // 2. KIBAR PERALATAN DAN MESIN
+        $asetTetapRows[] = array_merge($initRow('KIBAR PERALATAN DAN MESIN', true), ['nomor' => 2]);
+        $asetTetapRows[] = array_merge($initRow('Peralatan dan Mesin'), ['nomor' => null, 'indent' => 1]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Kibar Peralatan dan Mesin'), ['nomor' => null, 'indent' => 1]);
+        
+        // 3. KIBAR GEDUNG DAN BANGUNAN
+        $asetTetapRows[] = array_merge($initRow('KIBAR GEDUNG DAN BANGUNAN', true), ['nomor' => 3]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Kibar Gedung dan Bangunan'), ['nomor' => null, 'indent' => 1]);
+        
+        // 4. KIBAR JALAN, IRIGASI DAN JARINGAN
+        $asetTetapRows[] = array_merge($initRow('KIBAR JALAN, IRIGASI DAN JARINGAN', true), ['nomor' => 4]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Kibar Jalan, Irigasi dan Jaringan'), ['nomor' => null, 'indent' => 1]);
+        
+        // 5. KIBAR ASET TETAP LAINNYA
+        $asetTetapRows[] = array_merge($initRow('KIBAR ASET TETAP LAINNYA', true), ['nomor' => 5]);
+        $asetTetapRows[] = array_merge($initRow('Buku'), ['nomor' => null, 'indent' => 1]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Kibar Aset Tetap Lainnya'), ['nomor' => null, 'indent' => 1]);
+        
+        // 6. KIBAR KDP
+        $asetTetapRows[] = array_merge($initRow('KIBAR KDP', true), ['nomor' => 6]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Kibar KDP'), ['nomor' => null, 'indent' => 1]);
+        
+        // 7. ASET TIDAK BERWUJUD
+        $asetTetapRows[] = array_merge($initRow('ASET TIDAK BERWUJUD', true), ['nomor' => 7]);
+        $asetTetapRows[] = array_merge($initRow('Buku Kejian'), ['nomor' => null, 'indent' => 1]);
+        $asetTetapRows[] = array_merge($initRow('Jumlah Aset Tidak Berwujud'), ['nomor' => null, 'indent' => 1]);
 
-        $finalRows = [];
-        foreach ($rows as $key => $row) {
-            $finalRows[] = $row;
-            
-            $childDetails = array_filter($detailRows, function($detail) use ($key) {
-                return isset($detail['parent_key']) && $detail['parent_key'] === $key;
-            });
-            
-            foreach ($childDetails as $detail) {
-                $finalRows[] = $detail;
-            }
-        }
+        $groups[] = [
+            'label' => 'ASET TETAP',
+            'rows' => $asetTetapRows,
+        ];
 
-        $total = $initRow('TOTAL');
+        // ASET LANCAR - PERSEDIAAN (data aktual dari sistem)
+        $persediaanRows = [];
+        
+        // 8. PERSEDIAAN (header kategori)
+        $persediaanRows[] = array_merge($initRow('PERSEDIAAN', true), ['nomor' => 8]);
+        
+        // Urutkan berdasarkan nama_jenis kemudian nama_barang
+        usort($rows, function($a, $b) {
+            $jenisCompare = strcmp($a['nama_jenis'] ?? '', $b['nama_jenis'] ?? '');
+            if ($jenisCompare !== 0) return $jenisCompare;
+            return strcmp($a['uraian'], $b['uraian']);
+        });
+        
+        $counter = 1;
+        $subtotalPersediaan = $initRow('Jumlah Persediaan');
+        
         foreach ($rows as $row) {
-            $total['saldo_awal_unit'] += $row['saldo_awal_unit'];
-            $total['saldo_awal_val'] += $row['saldo_awal_val'];
-            foreach ($total['penambahan'] as $type => $vals) {
-                $total['penambahan'][$type]['unit'] += $row['penambahan'][$type]['unit'];
-                $total['penambahan'][$type]['val'] += $row['penambahan'][$type]['val'];
+            $row['nomor'] = $counter;
+            $row['indent'] = 1;
+            $persediaanRows[] = $row;
+            
+            // Akumulasi subtotal
+            $subtotalPersediaan['saldo_awal_unit'] += $row['saldo_awal_unit'];
+            $subtotalPersediaan['saldo_awal_val'] += $row['saldo_awal_val'];
+            foreach ($subtotalPersediaan['penambahan'] as $type => $vals) {
+                $subtotalPersediaan['penambahan'][$type]['unit'] += $row['penambahan'][$type]['unit'];
+                $subtotalPersediaan['penambahan'][$type]['val'] += $row['penambahan'][$type]['val'];
             }
-            foreach ($total['pengurangan'] as $type => $vals) {
-                $total['pengurangan'][$type]['unit'] += $row['pengurangan'][$type]['unit'];
-                $total['pengurangan'][$type]['val'] += $row['pengurangan'][$type]['val'];
+            foreach ($subtotalPersediaan['pengurangan'] as $type => $vals) {
+                $subtotalPersediaan['pengurangan'][$type]['unit'] += $row['pengurangan'][$type]['unit'];
+                $subtotalPersediaan['pengurangan'][$type]['val'] += $row['pengurangan'][$type]['val'];
             }
-            $total['saldo_akhir_unit'] += $row['saldo_akhir_unit'];
-            $total['saldo_akhir_val'] += $row['saldo_akhir_val'];
+            $subtotalPersediaan['saldo_akhir_unit'] += $row['saldo_akhir_unit'];
+            $subtotalPersediaan['saldo_akhir_val'] += $row['saldo_akhir_val'];
+            
+            $counter++;
         }
+
+        // Subtotal Aset Lancar
+        $subtotalAsetLancar = array_merge($initRow('JUMLAH ASET LANCAR', true), ['nomor' => null, 'indent' => 0]);
+        $subtotalAsetLancar['saldo_awal_unit'] = $subtotalPersediaan['saldo_awal_unit'];
+        $subtotalAsetLancar['saldo_awal_val'] = $subtotalPersediaan['saldo_awal_val'];
+        $subtotalAsetLancar['penambahan'] = $subtotalPersediaan['penambahan'];
+        $subtotalAsetLancar['pengurangan'] = $subtotalPersediaan['pengurangan'];
+        $subtotalAsetLancar['saldo_akhir_unit'] = $subtotalPersediaan['saldo_akhir_unit'];
+        $subtotalAsetLancar['saldo_akhir_val'] = $subtotalPersediaan['saldo_akhir_val'];
+
+        $persediaanRows[] = $subtotalAsetLancar;
+
+        $groups[] = [
+            'label' => 'ASET LANCAR',
+            'rows' => $persediaanRows,
+        ];
+
+        // TOTAL keseluruhan (ASET TETAP + ASET LANCAR)
+        $total = $initRow('JUMLAH ASET TETAP');
+        $total['saldo_awal_unit'] = $subtotalPersediaan['saldo_awal_unit'];
+        $total['saldo_awal_val'] = $subtotalPersediaan['saldo_awal_val'];
+        $total['penambahan'] = $subtotalPersediaan['penambahan'];
+        $total['pengurangan'] = $subtotalPersediaan['pengurangan'];
+        $total['saldo_akhir_unit'] = $subtotalPersediaan['saldo_akhir_unit'];
+        $total['saldo_akhir_val'] = $subtotalPersediaan['saldo_akhir_val'];
 
         $unitKerja = UnitKerja::find($validated['unit_kerja_id']);
 
-        $groups = [
-            [
-                'label' => 'PERSEDIAAN',
-                'rows' => $finalRows,
-            ],
-        ];
-
-        $assetGroups = [
-            'aset_lancar' => [
-                'label' => 'ASET LANCAR',
-                'groups' => $groups,
-            ],
-            'aset_tetap' => [
-                'label' => 'ASET TETAP',
-                'groups' => [],
-            ],
-        ];
-
         $report = [
-            'mode' => $mode,
-            'asset_groups' => $assetGroups,
+            'groups' => $groups,
             'total' => $total,
         ];
+
         return view('laporan.rekonsiliasi', compact('report', 'unitKerja', 'tglAwal', 'tglAkhir'));
     }
 }

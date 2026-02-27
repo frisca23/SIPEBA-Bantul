@@ -14,11 +14,53 @@
 </div>
 @endcan
 
+<form method="GET" action="{{ route('pengurangan.index') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;">
+    <label for="barang-filter" style="font-weight: 600; color: #1a2b4b;">Barang:</label>
+    <select id="barang-filter" name="barang_id" style="max-width: 260px;">
+        <option value="all" @selected(($selectedBarang ?? 'all') === 'all')>Semua Barang</option>
+        @foreach($barangOptions as $barang)
+            <option value="{{ $barang->id }}" @selected(($selectedBarang ?? 'all') == $barang->id)>
+                {{ $barang->nama_barang }}
+            </option>
+        @endforeach
+    </select>
+
+    <label for="tahun-filter" style="font-weight: 600; color: #1a2b4b;">Tahun:</label>
+    <select id="tahun-filter" name="tahun" style="max-width: 160px;">
+        <option value="all" @selected(($selectedTahun ?? 'all') === 'all')>Semua Tahun</option>
+        @foreach($tahunOptions as $tahun)
+            <option value="{{ $tahun }}" @selected(($selectedTahun ?? 'all') == $tahun)>
+                {{ $tahun }}
+            </option>
+        @endforeach
+    </select>
+
+    <button type="submit" class="btn btn-primary">Terapkan</button>
+    <a href="{{ route('pengurangan.index') }}" class="btn btn-secondary">Reset</a>
+</form>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+    <div style="background: #e3f2fd; padding: 12px 14px; border-radius: 6px;">
+        <div style="font-size: 12px; color: #1a2b4b;">Total Masuk</div>
+        <div style="font-size: 18px; font-weight: 700; color: #0d47a1;">{{ number_format($totalMasuk) }}</div>
+    </div>
+    <div style="background: #fff3cd; padding: 12px 14px; border-radius: 6px;">
+        <div style="font-size: 12px; color: #1a2b4b;">Total Keluar</div>
+        <div style="font-size: 18px; font-weight: 700; color: #8a6d3b;">{{ number_format($totalKeluar) }}</div>
+    </div>
+    <div style="background: #e8f5e9; padding: 12px 14px; border-radius: 6px;">
+        <div style="font-size: 12px; color: #1a2b4b;">Saldo</div>
+        <div style="font-size: 18px; font-weight: 700; color: #1b5e20;">{{ number_format($saldo) }}</div>
+    </div>
+</div>
+
 <table>
     <thead>
         <tr>
             <th>No</th>
             <th>No Bukti</th>
+            <th>Nama Barang</th>
+            <th>Jumlah Keluar</th>
             <th>Unit Kerja</th>
             <th>Tanggal Keluar</th>
             <th>Keperluan</th>
@@ -28,20 +70,22 @@
         </tr>
     </thead>
     <tbody>
-        @forelse($pengurangan as $item)
+        @forelse($penguranganDetails as $detail)
         <tr>
-            <td>{{ ($pengurangan->currentPage() - 1) * $pengurangan->perPage() + $loop->iteration }}</td>
-            <td><strong>{{ $item->no_bukti }}</strong></td>
+            <td>{{ ($penguranganDetails->currentPage() - 1) * $penguranganDetails->perPage() + $loop->iteration }}</td>
+            <td><strong>{{ $detail->pengurangan->no_bukti }}</strong></td>
+            <td><small>{{ $detail->barang->nama_barang }}</small></td>
+            <td style="text-align: center;">{{ $detail->jumlah_kurang }}</td>
             <td>
-                <small>{{ $item->unitKerja->nama_unit }}</small>
+                <small>{{ $detail->pengurangan->unitKerja->nama_unit }}</small>
             </td>
-            <td>{{ $item->tgl_keluar->format('d/m/Y') }}</td>
-            <td>{{ Str::limit($item->keperluan, 30) }}</td>
-            <td>{{ $item->creator->name }}</td>
+            <td>{{ $detail->pengurangan->tgl_keluar->format('d/m/Y') }}</td>
+            <td>{{ Str::limit($detail->pengurangan->keperluan, 30) }}</td>
+            <td>{{ $detail->pengurangan->creator->name }}</td>
             <td>
-                @if($item->status === 'pending')
+                @if($detail->pengurangan->status === 'pending')
                     <span class="badge badge-pending">PENDING</span>
-                @elseif($item->status === 'approved')
+                @elseif($detail->pengurangan->status === 'approved')
                     <span class="badge badge-approved">DISETUJUI</span>
                 @else
                     <span class="badge badge-rejected">DITOLAK</span>
@@ -49,14 +93,14 @@
             </td>
             <td>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <a href="{{ route('pengurangan.show', $item) }}" class="btn btn-primary btn-sm">Lihat</a>
+                    <a href="{{ route('pengurangan.show', $detail->pengurangan) }}" class="btn btn-primary btn-sm">Lihat</a>
                     
-                    @can('update', $item)
-                    <a href="{{ route('pengurangan.edit', $item) }}" class="btn btn-warning btn-sm">Edit</a>
+                    @can('update', $detail->pengurangan)
+                    <a href="{{ route('pengurangan.edit', $detail->pengurangan) }}" class="btn btn-warning btn-sm">Edit</a>
                     @endcan
 
-                    @can('delete', $item)
-                    <form action="{{ route('pengurangan.destroy', $item) }}" method="POST" style="display: inline;">
+                    @can('delete', $detail->pengurangan)
+                    <form action="{{ route('pengurangan.destroy', $detail->pengurangan) }}" method="POST" style="display: inline;">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger btn-sm" 
@@ -66,9 +110,9 @@
                     </form>
                     @endcan
 
-                    @can('approve', $item)
-                    @if($item->status === 'pending')
-                    <form action="{{ route('pengurangan.approve', $item) }}" method="POST" style="display: inline;">
+                    @can('approve', $detail->pengurangan)
+                    @if($detail->pengurangan->status === 'pending')
+                    <form action="{{ route('pengurangan.approve', $detail->pengurangan) }}" method="POST" style="display: inline;">
                         @csrf
                         <button type="submit" class="btn btn-success btn-sm" 
                                 onclick="return confirm('Setujui pengurangan ini? Stok akan diperbarui.')">
@@ -82,7 +126,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="8" style="text-align: center; padding: 30px;">
+            <td colspan="10" style="text-align: center; padding: 30px;">
                 <em>Tidak ada data pengurangan</em>
             </td>
         </tr>
@@ -93,10 +137,10 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
     <div>
         <small style="color: #666;">
-            Menampilkan {{ $pengurangan->count() }} dari {{ $pengurangan->total() }} data
+            Menampilkan {{ $penguranganDetails->count() }} dari {{ $penguranganDetails->total() }} data
         </small>
     </div>
-    {{ $pengurangan->links() }}
+    {{ $penguranganDetails->links() }}
 </div>
 
 <hr style="margin: 30px 0;">
