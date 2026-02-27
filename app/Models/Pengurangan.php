@@ -16,6 +16,7 @@ class Pengurangan extends Model
 
     protected $casts = [
         'tgl_keluar' => 'date',
+        'tgl_serah' => 'date',
         'verified_at' => 'datetime',
     ];
 

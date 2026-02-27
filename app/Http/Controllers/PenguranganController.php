@@ -20,10 +20,21 @@ class PenguranganController extends Controller
      */
     public function index(): View
     {
+<<<<<<< Updated upstream
         // Read-All: Semua user bisa lihat pengurangan dari semua unit
         $pengurangan = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail'])
             ->orderByDesc('tgl_keluar')
             ->paginate(15);
+=======
+        $query = Pengurangan::with(['unitKerja', 'creator', 'verifier', 'detail.barang.jenisBarang'])
+            ->orderByDesc('tgl_keluar');
+
+        if (Auth::user()->role !== 'super_admin') {
+            $query->where('unit_kerja_id', Auth::user()->unit_kerja_id);
+        }
+
+        $pengurangan = $query->paginate(50);
+>>>>>>> Stashed changes
 
         return view('pengurangan.index', compact('pengurangan'));
     }
@@ -36,10 +47,13 @@ class PenguranganController extends Controller
         $this->authorize('create', Pengurangan::class);
 
         $unitKerja = Auth::user()->unitKerja;
-        $barang = Barang::where('unit_kerja_id', Auth::user()->unit_kerja_id)
+        
+        $jenisBarang = \App\Models\JenisBarang::all();
+        $barang = Barang::with('jenisBarang')
+            ->where('unit_kerja_id', Auth::user()->unit_kerja_id)
             ->get();
 
-        return view('pengurangan.create', compact('unitKerja', 'barang'));
+        return view('pengurangan.create', compact('unitKerja', 'jenisBarang', 'barang'));
     }
 
     /**
@@ -52,6 +66,7 @@ class PenguranganController extends Controller
         $validated = $request->validate([
             'no_bukti' => 'required|string|unique:pengurangan,no_bukti',
             'tgl_keluar' => 'required|date',
+            'tgl_serah' => 'nullable|date',
             'keperluan' => 'required|string',
             'detail' => 'required|array|min:1',
             'detail.*.barang_id' => 'required|exists:barang,id',
@@ -75,6 +90,7 @@ class PenguranganController extends Controller
             'unit_kerja_id' => Auth::user()->unit_kerja_id,
             'no_bukti' => $validated['no_bukti'],
             'tgl_keluar' => $validated['tgl_keluar'],
+            'tgl_serah' => $validated['tgl_serah'],
             'keperluan' => $validated['keperluan'],
             'status' => 'pending', // Default status
             'created_by' => Auth::id(),
@@ -127,6 +143,7 @@ class PenguranganController extends Controller
 
         $validated = $request->validate([
             'tgl_keluar' => 'required|date',
+            'tgl_serah' => 'nullable|date',
             'keperluan' => 'required|string',
             'detail' => 'required|array|min:1',
             'detail.*.barang_id' => 'required|exists:barang,id',
@@ -135,6 +152,7 @@ class PenguranganController extends Controller
 
         $pengurangan->update([
             'tgl_keluar' => $validated['tgl_keluar'],
+            'tgl_serah' => $validated['tgl_serah'],
             'keperluan' => $validated['keperluan'],
         ]);
 

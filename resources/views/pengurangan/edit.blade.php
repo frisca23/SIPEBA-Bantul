@@ -14,6 +14,7 @@
 
     <h3 style="color: #003399; margin-top: 20px; margin-bottom: 15px;">Header Pengurangan</h3>
 
+<<<<<<< Updated upstream
     <div class="form-group">
         <label for="no_bukti">No Bukti:</label>
         <input type="text" name="no_bukti" id="no_bukti" value="{{ $pengurangan->no_bukti }}" disabled>
@@ -23,6 +24,17 @@
     <div class="form-group">
         <label for="tgl_keluar">Tanggal Keluar:</label>
         <input type="date" name="tgl_keluar" id="tgl_keluar" value="{{ $pengurangan->tgl_keluar->format('Y-m-d') }}" required>
+=======
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+            <label for="tgl_keluar">Tanggal Keluar Barang:</label>
+            <input type="date" name="tgl_keluar" id="tgl_keluar" value="{{ $pengurangan->tgl_keluar->format('Y-m-d') }}" required>
+        </div>
+        <div class="form-group">
+            <label for="tgl_serah">Tanggal Penyerahan Barang:</label>
+            <input type="date" name="tgl_serah" id="tgl_serah" value="{{ $pengurangan->tgl_serah ? $pengurangan->tgl_serah->format('Y-m-d') : '' }}">
+        </div>
+>>>>>>> Stashed changes
     </div>
 
     <div class="form-group">
@@ -74,7 +86,11 @@
 </form>
 
 <script type="application/json" id="barangData">
+<<<<<<< Updated upstream
 @json($barang->mapWithKeys(fn($b) => [$b->id => ['stok' => $b->stok_saat_ini]])->toArray())
+=======
+    @json($barang->mapWithKeys(fn($b) => [$b->id => ['stok' => $b->stok_saat_ini]])->toArray())
+>>>>>>> Stashed changes
 </script>
 <script>
 const barangData = JSON.parse(document.getElementById('barangData').textContent);
